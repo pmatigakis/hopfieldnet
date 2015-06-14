@@ -4,30 +4,37 @@ import numpy as np
 
 from hopfieldnet.net import HopfieldNetwork, InvalidNetworkInputException
 
-
 class HopfieldNetworkOperationTests(unittest.TestCase):
-
     def setUp(self):
         self.net = HopfieldNetwork(3)
 
-    def test_evaluate(self):
-        pattern = np.array([-1, 1, -1])
-        output = np.array([1, -1, 1])
+        self.input_patterns = np.array([[1, -1, 1],
+                                        [-1, 1, -1]])
 
-        weights = np.array([[0, 1, -1],
-                            [1, 0, 0],
-                            [-1, 1, 0]])
+        weights = np.array([[0.0, -1.0, 1.0],
+                            [-1.0, 0.0, -1.0],
+                            [1.0, -1.0, 0.0]])
 
         self.net.set_weights(weights)
 
-        result = self.net.evaluate(pattern)
+    def test_calculate_neuron_output(self):
+        neuron_output = self.net.calculate_neuron_output(0, self.input_patterns[0])
 
-        self.assertTrue(np.array_equal(result, output), "The network outputs doesn't match the expected result")
+        expected_neuron_output = 1.0
 
-    def test_throw_exception_on_invalid_input(self):
-        input_pattern = np.ones(10)
+        self.assertAlmostEqual(neuron_output, expected_neuron_output, 3)
 
-        self.assertRaises(InvalidNetworkInputException, self.net.evaluate, input_pattern)
+        neuron_output = self.net.calculate_neuron_output(1, self.input_patterns[0])
+
+        expected_neuron_output = -1.0
+
+        self.assertAlmostEqual(neuron_output, expected_neuron_output, 3)
+
+        neuron_output = self.net.calculate_neuron_output(2, self.input_patterns[0])
+
+        expected_neuron_output = 1.0
+
+        self.assertAlmostEqual(neuron_output, expected_neuron_output, 3)
 
 if __name__ == "__main__":
     unittest.main()

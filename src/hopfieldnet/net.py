@@ -1,5 +1,5 @@
 import numpy as np
-
+from random import randint, shuffle
 
 class InvalidWeightsException(Exception):
     pass
@@ -8,12 +8,9 @@ class InvalidWeightsException(Exception):
 class InvalidNetworkInputException(Exception):
     pass
 
-
 class HopfieldNetwork(object):
-
     def __init__(self, num_inputs):
         self._num_inputs = num_inputs
-        #self._weights = np.zeros((num_inputs,num_inputs))
         self._weights = np.random.uniform(-1.0, 1.0, (num_inputs, num_inputs))
 
     def set_weights(self, weights):
@@ -26,37 +23,46 @@ class HopfieldNetwork(object):
     def get_weights(self):
         """Return the weights array"""
         return self._weights
+    
+    def calculate_neuron_output(self, neuron, input_pattern):
+        """Calculate the output of the given neuron"""
+        num_neurons = len(input_pattern)
 
-    def evaluate(self, input_pattern):
-        """Calculate the output of the network using the input data"""
-        if input_pattern.shape != (self._num_inputs, ):
-            raise InvalidNetworkInputException()
+        s = 0.0
 
-        sums = input_pattern.dot(self._weights)
+        for j in range(num_neurons):
+            s += self._weights[neuron][j] * input_pattern[j]
 
-        s = np.zeros(self._num_inputs)
+        return 1.0 if s > 0.0 else -1.0
 
-        for i, value in enumerate(sums):
-            if value > 0:
-                s[i] = 1
-            else:
-                s[i] = -1
+    def run_once(self, update_list, input_pattern):
+        """Iterate over every neuron and update it's output"""
+        result = input_pattern.copy()
 
-        return s
+        changed = False
+        for neuron in update_list:
+            neuron_output = self.calculate_neuron_output(neuron, result)
+
+            if neuron_output != result[neuron]:
+                result[neuron] = neuron_output
+                changed = True
+
+        return changed, result
 
     def run(self, input_pattern, max_iterations=10):
         """Run the network using the input data until the output state doesn't change
         or a maximum number of iteration has been reached."""
-        last_input_pattern = input_pattern
-
         iteration_count = 0
 
+        result = input_pattern.copy()
+
         while True:
-            result = self.evaluate(last_input_pattern)
+            update_list = range(self._num_inputs)
+            shuffle(update_list)
+
+            changed, result = self.run_once(update_list, result)
 
             iteration_count += 1
 
-            if np.array_equal(result, last_input_pattern) or iteration_count == max_iterations:
+            if not changed or iteration_count == max_iterations:
                 return result
-            else:
-                last_input_pattern = result
